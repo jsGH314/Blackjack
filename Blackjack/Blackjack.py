@@ -19,4 +19,4 @@ class Deck:
         return pick
     
     def shufffle_deck(self):
-        random.shuffle(self.cards)    
+        random.shuffle(self.cards) 
