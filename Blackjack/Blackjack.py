@@ -1,10 +1,13 @@
 import random
 
-#Here is where I create a deck of cards using 3 lists
-number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
-suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
-#using list comprehension to create the 52 playable cards
-deck = [[x, y] for x in number for y in suits]
+def create_deck():  
+    #Here is where I create a deck of cards using 3 lists
+    number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
+    suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
+    #using list comprehension to create the 52 playable cards
+    deck = [[x, y] for x in number for y in suits]
+    
+    return deck
 
 #The Deck class will feature actions that a deck of cards is capable of via a "Dealer" class
 #A deck of cards can be dealt, and shuffled 
@@ -51,13 +54,10 @@ class Player:
     def hit(self, deck):
         self.hand.append(deck.deal_card())
         print(f"{self.name}'s cards: " + str(self.hand))
-        total = self.card_total()
-        if self.soft_hand == False:
-            print("Count: " + str(total) + "\n")
-        elif self.num_aces == 1:
-            print("Count: " + str(total) + " or " + str(total - 10)+ "\n")
-        elif self.num_aces == 2: 
-            print("Count: " + str(total - 10) + " or " + str(total - 20)+ "\n")
+        #total = self.card_total
+        self.display_count()
+        #elif self.num_aces == 2: 
+            #print("Count: " + str(total - 10) + " or " + str(total - 20)+ "\n")
            
         
     def card_total(self):
@@ -84,6 +84,15 @@ class Player:
                 return total
 
         return total
+    
+    def display_count(self):
+        total = self.card_total()
+        if self.soft_hand == False:
+            print("Count: " + str(total) + "\n")
+        elif self.soft_hand == True:
+            print("Count: " + str(total) + " or " + str(total - 10)+ "\n")
+        elif self.card_total > 21 and self.soft_hand == True:
+            print("Count: " + str(total - 10) + "\n")
     
     def split_cards(self, deck):
         self.split_cards = True
@@ -124,7 +133,7 @@ class Dealer(Player):
         if int(player.card_total()) > 21 or int(
                 dealer.card_total()) == 21 or int(
                 dealer.card_total()) > int(player.card_total()):
-            print(f"{player.name} Loses \n Cash: {player.cash}")
+            print(f"{player.name} Loses \nCash: {player.cash}")
             self.is_there_a_winner = True
 
         elif int(dealer.card_total()) > 21 or int(
@@ -144,6 +153,7 @@ class Dealer(Player):
         if int(player.card_total()) > 21:
             print(f"{player.name} Loses")
             print(f"Cash {player.cash}$")
+            self.is_there_a_winner = True
         elif int(dealer.card_total()) > 21:
             print(f"{player.name} wins {player.bet}$!")
             player.cash += (player.bet * 2)
@@ -159,13 +169,15 @@ class Dealer(Player):
     def new_game(self):
         another_game = input("Play another round?  y/n:  ")
         if another_game == "y":
+            deck1 = Deck(create_deck())
+            deck1.shuffle_deck()
             begin_game()
         else:
             pass
    
         
 dealer1 = Dealer("Dealer")
-deck1 = Deck(deck)
+deck1 = Deck(create_deck())
 deck1.shuffle_deck()
 name = input("Please input your name: ")
 player = Player(name, 200)
@@ -176,6 +188,8 @@ def begin_game():
     player.stay = False
     dealer1.stay = False
     dealer1.is_there_a_winner = False
+    player.soft_hand = False
+    dealer1.soft_hand = False
     player.hand = []
     dealer1.hand = []
     dealer1.new_hand(player, dealer1)
