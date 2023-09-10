@@ -24,7 +24,7 @@ class Deck:
         self.cards.append(cards)
         return self.cards
     
-    def shufffle_deck(self):
+    def shuffle_deck(self):
         random.shuffle(self.cards) 
 
 #Next, is the player class
@@ -32,7 +32,7 @@ class Deck:
 #Players can choose how much they bet, if they want to make side bets, hit, stay, split cards, or double down. 
 class Player:
     def __init__(self, name, cash = 0, bet = 0):
-        self.cards = []
+        self.hand = []
         self.split = []
         self.cash = cash
         self.name = name 
@@ -49,19 +49,20 @@ class Player:
         self.soft_hand = False
             
     def hit(self, deck):
-        self.cards.append(deck.deal_card())
-        print(f"{self.name}'s cards: " + str(self.cards))
+        self.hand.append(deck.deal_card())
+        print(f"{self.name}'s cards: " + str(self.hand))
         total = self.card_total()
         if self.soft_hand == False:
-            print("Count: " + str(total + "\n"))
+            print("Count: " + str(total) + "\n")
         elif self.num_aces == 1:
             print("Count: " + str(total) + " or " + str(total - 10)+ "\n")
         elif self.num_aces == 2: 
             print("Count: " + str(total - 10) + " or " + str(total - 20)+ "\n")
+           
         
     def card_total(self):
         total = 0
-        for card in self.cards:
+        for card in self.hand:
             if card[0] == 'J':
                 total += 10
             elif card[0] == 'Q':
@@ -75,6 +76,12 @@ class Player:
                 self.num_aces += 1
             else:
                 total += card[0]
+                
+        if total > 21:
+            if self.soft_hand == True:
+                return total - 10
+            else:
+                return total
 
         return total
     
@@ -82,8 +89,8 @@ class Player:
         self.split_cards = True
         self.can_double = False
         self.cash -= self.bet
-        self.split.append(self.cards.pop())
-        self.cards.append(deck.deal_card())
+        self.split.append(self.hand.pop())
+        self.hand.append(deck.deal_card())
         self.split.append(deck.deal_card())
         
         #self.split.append(self("Split 1: ", deck, self.bet))
@@ -94,7 +101,7 @@ class Player:
             
     
     def show_cards(self):
-        for card in self.cards:
+        for card in self.hand:
           return str(card[0]) + " of " + str(card[1]) 
         
 #The Dealer is technically a player in the game. So the Dealer class is a subclass of Player
@@ -103,12 +110,12 @@ class Player:
 class Dealer(Player):
     def __init__(self, name, cash=0):
         super().__init__(name)
-        self.cards = []
+        self.hand = []
         self.is_winner = False
 
     def deal_cards(self, player, deck):
-        player.cards.append(deck.deal_card())
-        player.cards.append(deck.deal_card())
+        player.hand.append(deck.deal_card())
+        player.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
 
@@ -117,24 +124,31 @@ class Dealer(Player):
         if int(player.card_total()) > 21 or int(
                 dealer.card_total()) == 21 or int(
                 dealer.card_total()) > int(player.card_total()):
-            print(f"{player.name} Loses")
+            print(f"{player.name} Loses \n Cash: {player.cash}")
             self.is_there_a_winner = True
 
         elif int(dealer.card_total()) > 21 or int(
                 player.card_total()) == 21 or int(
                 player.card_total()) > int(dealer.card_total()):
-            print(f"{player.name} wins")
+            print(f"{player.name} wins {player.bet}$!")
+            player.cash += (player.bet * 2)
+            print(f"Cash {player.cash}$")
             self.is_there_a_winner = True
         else:
-            print("Push")
+            player.cash += player.bet
+            print("Push \n Cash: " + str(player.cash))
             self.is_there_a_winner = True
 
 #Check for bust
-    def check_for_lose(self, player):
+    def check_for_lose(self, dealer, player):
         if int(player.card_total()) > 21:
             print(f"{player.name} Loses")
+            print(f"Cash {player.cash}$")
+        elif int(dealer.card_total()) > 21:
+            print(f"{player.name} wins {player.bet}$!")
+            player.cash += (player.bet * 2)
+            print(f"Cash {player.cash}$")
             self.is_there_a_winner = True
-
         else:
             pass
 
@@ -166,10 +180,16 @@ def begin_game():
     dealer1.hand = []
     dealer1.new_hand(player, dealer1)
     dealer1.deal_cards(player, deck1)
-    print(f"{name}'s hand is: " + str(player.hand))
-    print("Count: " + str(player.calculate_hand()) + "\n")
+    player.bet = int(input("Place your bet: "))
+    if player.bet > player.cash:
+        player.bet = input("You dont have that much cash, try again: ")
+    if player.bet < 0:
+        player.bet = input("You cant bet anything less than 1$, try again: ")
+    player.cash -= player.bet
+    print(f"{name}'s cards: " + str(player.hand))
+    print("Count: " + str(player.card_total()) + "\n")
     print("\nThe DEALER's hand is: " + str(dealer1.hand))
-    print("Count: " + str(dealer1.calculate_hand()) + "\n")
+    print("Count: " + str(dealer1.card_total()) + "\n")
     
 def game_mechanics():
     while dealer1.is_there_a_winner == False:
@@ -183,7 +203,7 @@ def game_mechanics():
                 player.stay = True
             elif hit_stay == "h":
                 player.hit(deck1)
-                dealer1.check_for_lose(player)
+                dealer1.check_for_lose(dealer1, player)
                 if dealer1.is_there_a_winner == True:
                     dealer1.new_game()
                 else:
@@ -194,12 +214,18 @@ def game_mechanics():
             pass
         
         if dealer1.stay == False:
-            if dealer1.calculate_hand() <= 16:
+            if dealer1.card_total() <= 16:
                 dealer1.hit(deck1)
-                dealer1.check_for_lose(dealer1)
+                dealer1.check_for_lose(dealer1, player)
                 if dealer1.is_there_a_winner == True:
                     dealer1.new_game()
             else:
                 dealer1.stay = True
         else:
             pass    
+
+begin_game()
+
+game_mechanics()
+
+dealer1.new_game()
