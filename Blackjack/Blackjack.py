@@ -1,9 +1,9 @@
 import random
 
+number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
+suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
+
 def create_deck():  
-    #Here is where I create a deck of cards using 3 lists
-    number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
-    suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
     #using list comprehension to create the 52 playable cards
     deck = [[x, y] for x in number for y in suits]
     
@@ -20,6 +20,8 @@ class Deck:
     
     def deal_card(self):
         pick = self.cards.pop()
+        #test = len(self.cards)
+        ##print("Cards Remaining: ", test)
         return pick
     
     #This method is helpful for splits
@@ -29,6 +31,9 @@ class Deck:
     
     def shuffle_deck(self):
         random.shuffle(self.cards) 
+    
+    def new_deck(self):
+        self.cards = create_deck()
 
 #Next, is the player class
 #Players have a name, an amount of cash, and they will have a hand of cards dealt to them 
@@ -167,9 +172,12 @@ class Dealer(Player):
         dealer.hand = []
 
     def new_game(self):
+        print("======================================================")
         another_game = input("Play another round?  y/n:  ")
         if another_game == "y":
-            deck1 = Deck(create_deck())
+            deck1.new_deck()
+            #new_deck = create_deck()
+            #deck1 = Deck(new_deck)
             deck1.shuffle_deck()
             begin_game()
         else:
@@ -194,6 +202,7 @@ def begin_game():
     dealer1.hand = []
     dealer1.new_hand(player, dealer1)
     dealer1.deal_cards(player, deck1)
+    print("======================================================")
     player.bet = int(input("Place your bet: "))
     if player.bet > player.cash:
         player.bet = input("You dont have that much cash, try again: ")
@@ -243,3 +252,11 @@ begin_game()
 game_mechanics()
 
 dealer1.new_game()
+
+#TODO
+#Need to fix pop from empty list error for deck, must be reaching the end of the deck after a while and - DONE
+#should call for a new deck to be created/shuffled - DONE
+
+#Need to work on soft hand display, if hand is initially dealt with an ace, it should display 'Count x or y' ex 'Count 5 or 15'
+#Need to start working on double down option in game
+#need to start working on split hands in game
