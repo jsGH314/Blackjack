@@ -45,7 +45,7 @@ class Player:
         self.cash = cash
         self.name = name 
         self.bet = bet
-        self.num_aces = 0
+        #self.num_aces = 0
         self.stay = False
         #players can double their original bet, and a hit must be made
         self.double_down = False
@@ -55,6 +55,7 @@ class Player:
         self.can_split = False
         #Any hand with an Ace is considered a 'soft' hand
         self.soft_hand = False
+        self.has_blackjack = False
             
     def hit(self, deck):
         self.hand.append(deck.deal_card())
@@ -63,25 +64,29 @@ class Player:
         self.display_count()
         #elif self.num_aces == 2: 
             #print("Count: " + str(total - 10) + " or " + str(total - 20)+ "\n")
-           
+
+    def is_soft_hand(self):
+        for card in self.hand:
+            if card[0] == 'A':
+                self.soft_hand = True
         
     def card_total(self):
         total = 0
         for card in self.hand:
-            if card[0] == 'J':
-                total += 10
-            elif card[0] == 'Q':
-                total += 10
+            #Aces are 1 or 11, any hand with an Ace is considered a 'soft' hand
+            if card[0] == 'A':
+                total += 11
+                #self.soft_hand = True
+                #self.num_aces += 1
             elif card[0] == 'K':
                 total += 10
-            #Aces are 1 or 11, any hand with an Ace is considered a 'soft' hand
-            elif card[0] == 'A':
-                total += 11
-                self.soft_hand = True
-                self.num_aces += 1
+            elif card[0] == 'Q':
+                total += 10    
+            elif card[0] == 'J':
+                total += 10                
             else:
                 total += card[0]
-                
+               
         if total > 21:
             if self.soft_hand == True:
                 return total - 10
@@ -91,13 +96,20 @@ class Player:
         return total
     
     def display_count(self):
+        #self.is_soft_hand()
         total = self.card_total()
-        if self.soft_hand == False:
+        print("Soft Hand: ", self.soft_hand)
+        if self.soft_hand == True:
+            if total < 21:
+                print("Count: " + str(total) + " or " + str(total - 10)+ "\n")                
+            elif total > 21:
+                print("Count: " + str(total - 10) + "\n")
+            elif total == 21:
+                print("Count 21, BLACKJACK!")
+                self.has_blackjack = True
+        else:
             print("Count: " + str(total) + "\n")
-        elif self.soft_hand == True:
-            print("Count: " + str(total) + " or " + str(total - 10)+ "\n")
-        elif self.card_total > 21 and self.soft_hand == True:
-            print("Count: " + str(total - 10) + "\n")
+
     
     def split_cards(self, deck):
         self.split_cards = True
@@ -132,9 +144,18 @@ class Dealer(Player):
         player.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
+        self.is_soft_hand()
+        player.is_soft_hand() 
 
 #Check for winner
     def check_for_win(self, player, dealer):
+        
+        if player.has_blackjack == True:
+            print(f"{player.name} wins {player.bet}$!")
+            player.cash += (player.bet * 2.5)
+            print(f"Cash {player.cash}$")
+            self.is_there_a_winner = True          
+
         if int(player.card_total()) > 21 or int(
                 dealer.card_total()) == 21 or int(
                 dealer.card_total()) > int(player.card_total()):
@@ -179,6 +200,8 @@ class Dealer(Player):
             #new_deck = create_deck()
             #deck1 = Deck(new_deck)
             deck1.shuffle_deck()
+            player.soft_hand = False
+            dealer1.soft_hand = False
             begin_game()
         else:
             pass
@@ -196,8 +219,8 @@ def begin_game():
     player.stay = False
     dealer1.stay = False
     dealer1.is_there_a_winner = False
-    player.soft_hand = False
-    dealer1.soft_hand = False
+    #player.soft_hand = False
+    #dealer1.soft_hand = False
     player.hand = []
     dealer1.hand = []
     dealer1.new_hand(player, dealer1)
@@ -210,9 +233,13 @@ def begin_game():
         player.bet = input("You cant bet anything less than 1$, try again: ")
     player.cash -= player.bet
     print(f"{name}'s cards: " + str(player.hand))
-    print("Count: " + str(player.card_total()) + "\n")
+    #print("Soft Hand: ", player.soft_hand)
+    player.display_count()
+    #print("Count: " + str(player.display_count()) + "\n")
     print("\nThe DEALER's hand is: " + str(dealer1.hand))
-    print("Count: " + str(dealer1.card_total()) + "\n")
+    dealer1.display_count()
+    #print("Soft Hand: ", dealer1.soft_hand)
+    #print("Count: " + str(dealer1.display_count()) + "\n")
     
 def game_mechanics():
     while dealer1.is_there_a_winner == False:
@@ -258,5 +285,6 @@ dealer1.new_game()
 #should call for a new deck to be created/shuffled - DONE
 
 #Need to work on soft hand display, if hand is initially dealt with an ace, it should display 'Count x or y' ex 'Count 5 or 15'
+#need to create a better method for checking for blackjack in initial hand that is dealt. a hand that adds up to 21 with more than 2 cards is not considered a 'blackjack'
 #Need to start working on double down option in game
 #need to start working on split hands in game
