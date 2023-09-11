@@ -1,10 +1,9 @@
 import random
 
-number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
-suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
-
 def create_deck():  
     #using list comprehension to create the 52 playable cards
+    number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "A", "J", "Q", "K"]
+    suits = [u"\u2663", u"\u2660", u"\u2666", u"\u2665"]
     deck = [[x, y] for x in number for y in suits]
     
     return deck
@@ -25,9 +24,9 @@ class Deck:
         return pick
     
     #This method is helpful for splits
-    def add_card(self, cards):
-        self.cards.append(cards)
-        return self.cards
+    #def add_card(self, cards):
+     #   self.cards.append(cards)
+     #   return self.cards
     
     def shuffle_deck(self):
         random.shuffle(self.cards) 
@@ -60,15 +59,13 @@ class Player:
     def hit(self, deck):
         self.hand.append(deck.deal_card())
         print(f"{self.name}'s cards: " + str(self.hand))
-        #total = self.card_total
-        self.display_count()
-        #elif self.num_aces == 2: 
-            #print("Count: " + str(total - 10) + " or " + str(total - 20)+ "\n")
-
-    def is_soft_hand(self):
-        for card in self.hand:
-            if card[0] == 'A':
-                self.soft_hand = True
+        
+        #self.display_count()
+        print("Count: " + str(self.card_total()) + "\n")
+    #def is_soft_hand(self):
+    #    for card in self.hand:
+    #        if card[0] == 'A':
+    #            self.soft_hand = True
         
     def card_total(self):
         total = 0
@@ -76,7 +73,7 @@ class Player:
             #Aces are 1 or 11, any hand with an Ace is considered a 'soft' hand
             if card[0] == 'A':
                 total += 11
-                #self.soft_hand = True
+                self.soft_hand = True
                 #self.num_aces += 1
             elif card[0] == 'K':
                 total += 10
@@ -86,7 +83,7 @@ class Player:
                 total += 10                
             else:
                 total += card[0]
-               
+        
         if total > 21:
             if self.soft_hand == True:
                 return total - 10
@@ -95,8 +92,12 @@ class Player:
 
         return total
     
+    def check_for_blackjack(self):
+        if self.card_total() == 21:
+            self.has_blackjack = True
+            
+    
     def display_count(self):
-        #self.is_soft_hand()
         total = self.card_total()
         print("Soft Hand: ", self.soft_hand)
         if self.soft_hand == True:
@@ -104,20 +105,19 @@ class Player:
                 print("Count: " + str(total) + " or " + str(total - 10)+ "\n")                
             elif total > 21:
                 print("Count: " + str(total - 10) + "\n")
-            elif total == 21:
-                print("Count 21, BLACKJACK!")
-                self.has_blackjack = True
+            #elif total == 21:
+                #print("Count 21, BLACKJACK!")
+                #self.has_blackjack = True
         else:
             print("Count: " + str(total) + "\n")
-
     
-    def split_cards(self, deck):
-        self.split_cards = True
-        self.can_double = False
-        self.cash -= self.bet
-        self.split.append(self.hand.pop())
-        self.hand.append(deck.deal_card())
-        self.split.append(deck.deal_card())
+    #def split_cards(self, deck):
+       #self.split_cards = True
+       # self.can_double = False
+       # self.cash -= self.bet
+       # self.split.append(self.hand.pop())
+       # self.hand.append(deck.deal_card())
+       # self.split.append(deck.deal_card())
         
         #self.split.append(self("Split 1: ", deck, self.bet))
         #self.split.append(self("Split 2: ", deck, self.bet))
@@ -134,6 +134,11 @@ class Player:
 #A dealer can: Deal cards, Check for win/losses
 #The dealer must hit a soft 17
 class Dealer(Player):
+    
+    #The "hole card" is the card that stays face down before the dealer plays their hand, 
+    #once it is time for the dealer to play their hand, they reveal their second card
+    #hole_card = False
+
     def __init__(self, name, cash=0):
         super().__init__(name)
         self.hand = []
@@ -144,24 +149,38 @@ class Dealer(Player):
         player.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
         self.hand.append(deck.deal_card())
-        self.is_soft_hand()
-        player.is_soft_hand() 
-
+        
+        #can probably do something to clean this up TODO
+        #self.is_soft_hand()
+        #player.is_soft_hand() 
+        
+    #def play_hand(self, deck):
+        #self.hole_card = True
+        
+    def check_for_dealer_blackjack(self):
+        if self.card_total() == 21:
+            if player.has_blackjack == False:
+                print("Dealer has Blackjack!")
+                print(f"{player.name} Loses \nCash: {player.cash}")
+                self.is_there_a_winner = True
+            elif player.has_blackjack == True:
+                player.cash += player.bet
+                print("Push \n Cash: " + str(player.cash))
+                self.is_there_a_winner = True 
+                
 #Check for winner
     def check_for_win(self, player, dealer):
-        
         if player.has_blackjack == True:
-            print(f"{player.name} wins {player.bet}$!")
+            print("BLACKJACK!")
+            print(f"{player.name} wins {player.bet * 1.5}$!")
             player.cash += (player.bet * 2.5)
             print(f"Cash {player.cash}$")
             self.is_there_a_winner = True          
-
-        if int(player.card_total()) > 21 or int(
+        elif int(player.card_total()) > 21 or int(
                 dealer.card_total()) == 21 or int(
                 dealer.card_total()) > int(player.card_total()):
             print(f"{player.name} Loses \nCash: {player.cash}")
             self.is_there_a_winner = True
-
         elif int(dealer.card_total()) > 21 or int(
                 player.card_total()) == 21 or int(
                 player.card_total()) > int(dealer.card_total()):
@@ -176,7 +195,11 @@ class Dealer(Player):
 
 #Check for bust
     def check_for_lose(self, dealer, player):
-        if int(player.card_total()) > 21:
+        if dealer.has_blackjack == True:
+            print(f"{player.name} Loses")
+            print(f"Cash {player.cash}$")
+            self.is_there_a_winner = True 
+        elif int(player.card_total()) > 21:
             print(f"{player.name} Loses")
             print(f"Cash {player.cash}$")
             self.is_there_a_winner = True
@@ -218,30 +241,49 @@ print(f"\n Welcome {name}!\n")
 def begin_game():
     player.stay = False
     dealer1.stay = False
+    player.has_blackjack = False
+    dealer1.has_blackjack = False
     dealer1.is_there_a_winner = False
-    #player.soft_hand = False
-    #dealer1.soft_hand = False
+    #dealer1.hole_card = False
     player.hand = []
     dealer1.hand = []
     dealer1.new_hand(player, dealer1)
     dealer1.deal_cards(player, deck1)
     print("======================================================")
     player.bet = int(input("Place your bet: "))
+    print("======================================================")
+    #Error checking logic for betting#
     if player.bet > player.cash:
         player.bet = input("You dont have that much cash, try again: ")
     if player.bet < 0:
         player.bet = input("You cant bet anything less than 1$, try again: ")
+    #Deducts bet from player bankroll
     player.cash -= player.bet
     print(f"{name}'s cards: " + str(player.hand))
     #print("Soft Hand: ", player.soft_hand)
     player.display_count()
+    player.check_for_blackjack()
     #print("Count: " + str(player.display_count()) + "\n")
-    print("\nThe DEALER's hand is: " + str(dealer1.hand))
+    print("\nThe DEALER's hand is: " + str(dealer1.hand))        
     dealer1.display_count()
+    dealer1.check_for_dealer_blackjack()
+    #######################################################################################
+    #Here we need to only show the "top"card until it is time for the dealer to play their hand
+    #if dealer1.hole_card == False:
+        #print("\nThe DEALER's hand is: " + str(dealer1.hand[0]))
+    #elif dealer1.hole_card == True:
+        #print("\nThe DEALER's hand is: " + str(dealer1.hand))        
+        #dealer1.display_count()
+    #######################################################################################
+
     #print("Soft Hand: ", dealer1.soft_hand)
     #print("Count: " + str(dealer1.display_count()) + "\n")
     
 def game_mechanics():
+    #Player plays their hand first
+    #Then dealer plays     
+    #dealer1.hole_card == True    
+
     while dealer1.is_there_a_winner == False:
         if player.stay == True and dealer1.stay == True:
             dealer1.check_for_win(player, dealer1)
@@ -262,7 +304,7 @@ def game_mechanics():
                 pass
         else:
             pass
-        
+        #dealer MUST hit a soft 17, so we would add this here 
         if dealer1.stay == False:
             if dealer1.card_total() <= 16:
                 dealer1.hit(deck1)
